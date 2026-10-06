@@ -1,0 +1,12 @@
+import type { DetectedRegion } from '../domain/types';
+
+export function ComparisonChart({ baseline, improved }: { baseline: number; improved: number }) {
+  const max = Math.max(baseline, improved);
+  return <div className="chart-card"><div className="chart-heading"><div><span className="eyebrow">METHOD COMPARISON</span><h3>Baseline vs improved</h3></div><span className="chart-delta">+{(improved - baseline).toFixed(1)} km² surfaced</span></div><div className="comparison-bars"><div className="bar-row"><span>Pixel difference</span><div className="bar-track"><div className="bar-fill muted" style={{ width: `${baseline / max * 100}%` }} /></div><strong>{baseline.toFixed(1)} km²</strong></div><div className="bar-row"><span>Ensemble + NDWI</span><div className="bar-track"><div className="bar-fill signal" style={{ width: `${improved / max * 100}%` }} /></div><strong>{improved.toFixed(1)} km²</strong></div></div><p className="chart-note">The improved method surfaces connected water-related change that the baseline misses; both remain predictions requiring field verification.</p></div>;
+}
+
+export function DistributionCharts({ regions }: { regions: DetectedRegion[] }) {
+  const sorted = [...regions].sort((a, b) => b.priority - a.priority);
+  const max = Math.max(...sorted.map((r) => r.priority));
+  return <div className="chart-card compact-chart"><div className="chart-heading"><div><span className="eyebrow">RESPONSE PRIORITY</span><h3>Ranked signal</h3></div><span className="chart-delta">{regions.length} zones</span></div><div className="priority-bars">{sorted.map((region, index) => <div className="priority-row" key={region.id}><span className={`rank-badge rank-${index + 1}`}>{String(index + 1).padStart(2, '0')}</span><span className="priority-label">{region.shortLabel}</span><div className="bar-track"><div className="bar-fill" style={{ width: `${region.priority / max * 100}%`, background: region.color }} /></div><strong>{region.priority}</strong></div>)}</div><div className="mini-stats"><div><span className="mini-stat-value">{Math.round(regions.reduce((sum, r) => sum + r.confidence, 0) / regions.length)}%</span><span>avg confidence</span></div><div><span className="mini-stat-value">{regions.filter((r) => r.priorityLevel === 'Critical').length}</span><span>critical zones</span></div><div><span className="mini-stat-value">{regions.reduce((sum, r) => sum + r.infrastructure.affectedRoadKm, 0).toFixed(1)} km</span><span>road exposure</span></div></div></div>;
+}

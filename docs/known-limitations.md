@@ -1,0 +1,3 @@
+# Known limitations
+
+The default event and scores are synthetic and do not represent live satellite observations. The browser MVP validates upload intent and metadata but does not decode arbitrary GeoTIFF bands, reproject rasters, run field-calibrated morphology or persist files in object storage. The custom map is a deterministic cartographic surface rather than a live map-tile layer. Infrastructure overlap is only a potentially affected relationship; it is not confirmation of damage or inaccessibility. PDF rendering is browser-side and can vary slightly by browser. Administrator weights are UI-local until the production database-backed configuration endpoint is implemented. No external ML weights, real population product or field verification feed is connected.
