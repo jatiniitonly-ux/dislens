@@ -1,0 +1,65 @@
+{
+  "id": "LOCAL-MUMBAI-SATELLITE-001",
+  "locationKey": "mumbai",
+  "displayName": "Mumbai Satellite and Rainfall Dataset",
+  "mode": "local",
+  "sourceType": "public-satellite-plus-rainfall",
+  "operational": false,
+  "validationStatus": "local-analysis-only",
+  "evidenceStatus": "requires-processing",
+  "aoi": {
+    "bbox": [72.75, 18.85, 73.05, 19.35],
+    "crs": "EPSG:4326"
+  },
+  "rainfall": {
+    "source": "OpenCity / India Meteorological Department",
+    "url": "https://data.opencity.in/dataset/mumbai-rainfall-data",
+    "localFile": "rainfall/mumbai-rainfall.csv",
+    "coverage": "1901-2021",
+    "gridPoint": [72.75, 19.0]
+  },
+  "imagery": {
+    "status": "verified-metadata-only",
+    "provider": "Copernicus Data Space Ecosystem",
+    "collection": "sentinel-1-grd",
+    "pre": {
+      "sensor": "Sentinel-1D",
+      "productId": "S1D_IW_GRDH_1SDV_20260918T010238_20260918T010309_004625_008A01_036E_COG",
+      "date": "2026-09-18T01:02:38.321035Z",
+      "orbitDirection": "descending",
+      "absoluteOrbit": 4625,
+      "polarization": ["VV", "VH"],
+      "processingLevel": "L1",
+      "bbox": [70.998596, 17.158554, 73.745903, 19.474184],
+      "intersectsAoi": true,
+      "thumbnail": "thumbnails/pre.png",
+      "vv": null,
+      "vh": null,
+      "remoteVv": "s3://eodata/Sentinel-1/SAR/IW_GRDH_1S-COG/2026/09/18/S1D_IW_GRDH_1SDV_20260918T010238_20260918T010309_004625_008A01_036E_COG.SAFE/measurement/s1d-iw-grd-vv-20260918t010238-20260918t010309-004625-008a01-001-cog.tiff",
+      "remoteVh": "s3://eodata/Sentinel-1/SAR/IW_GRDH_1S-COG/2026/09/18/S1D_IW_GRDH_1SDV_20260918T010238_20260918T010309_004625_008A01_036E_COG.SAFE/measurement/s1d-iw-grd-vh-20260918t010238-20260918t010309-004625-008a01-002-cog.tiff"
+    },
+    "post": {
+      "sensor": "Sentinel-1D",
+      "productId": "S1D_IW_GRDH_1SDV_20260930T010238_20260930T010309_004800_00901B_8A28_COG",
+      "date": "2026-09-30T01:02:38.345626Z",
+      "orbitDirection": "descending",
+      "absoluteOrbit": 4800,
+      "polarization": ["VV", "VH"],
+      "processingLevel": "L1",
+      "bbox": [70.999405, 17.159275, 73.746559, 19.474155],
+      "intersectsAoi": true,
+      "thumbnail": "thumbnails/post.png",
+      "vv": null,
+      "vh": null,
+      "remoteVv": "s3://eodata/Sentinel-1/SAR/IW_GRDH_1S-COG/2026/09/30/S1D_IW_GRDH_1SDV_20260930T010238_20260930T010309_004800_00901B_8A28_COG.SAFE/measurement/s1d-iw-grd-vv-20260930t010238-20260930t010309-004800-00901b-001-cog.tiff",
+      "remoteVh": "s3://eodata/Sentinel-1/SAR/IW_GRDH_1S-COG/2026/09/30/S1D_IW_GRDH_1SDV_20260930T010238_20260930T010309_004800_00901B_8A28_COG.SAFE/measurement/s1d-iw-grd-vh-20260930t010238-20260930t010309-004800-00901b-002-cog.tiff"
+    }
+  },
+  "processing": {
+    "method": "local-sar-change-analysis",
+    "validationStatus": "not-operationally-validated",
+    "verifiedPair": true,
+    "localRasterPairAvailable": false,
+    "unavailableReason": "Verified catalog metadata and thumbnails are bundled, but VV/VH GeoTIFF rasters are not locally downloaded or processed in this browser build."
+  }
+}

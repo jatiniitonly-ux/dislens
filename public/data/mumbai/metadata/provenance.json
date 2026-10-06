@@ -1,0 +1,22 @@
+{
+  "runId": "",
+  "datasetId": "LOCAL-MUMBAI-SATELLITE-001",
+  "location": "Mumbai, Maharashtra",
+  "locationKey": "mumbai",
+  "mode": "local",
+  "sourceType": "public-satellite-plus-rainfall",
+  "preProductId": "S1D_IW_GRDH_1SDV_20260918T010238_20260918T010309_004625_008A01_036E_COG",
+  "postProductId": "S1D_IW_GRDH_1SDV_20260930T010238_20260930T010309_004800_00901B_8A28_COG",
+  "preAcquisitionDate": "2026-09-18T01:02:38.321035Z",
+  "postAcquisitionDate": "2026-09-30T01:02:38.345626Z",
+  "aoi": [72.75, 18.85, 73.05, 19.35],
+  "aoiCrs": "EPSG:4326",
+  "rainfallSource": "OpenCity / India Meteorological Department",
+  "rainfallUrl": "https://data.opencity.in/dataset/mumbai-rainfall-data",
+  "processingVersion": "not-run-local-raster-unavailable",
+  "validationStatus": "not-operationally-validated",
+  "verifiedPair": true,
+  "localRasterPairAvailable": false,
+  "generatedAt": "2026-10-06T10:54:00Z",
+  "notes": "Both Sentinel-1 GRD catalog footprints intersect the Mumbai AOI. VV/VH COG asset references are retained in manifest.json; no flood mask or exposure estimate is generated without local raster validation."
+}

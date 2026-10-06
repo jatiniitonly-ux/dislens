@@ -4,6 +4,13 @@ export interface Coordinates {
   accuracy?: number;
 }
 
+<<<<<<< HEAD
+=======
+export function isValidCoordinates(coordinates: Pick<Coordinates, 'latitude' | 'longitude'>): boolean {
+  return Number.isFinite(coordinates.latitude) && Number.isFinite(coordinates.longitude) && coordinates.latitude >= -90 && coordinates.latitude <= 90 && coordinates.longitude >= -180 && coordinates.longitude <= 180;
+}
+
+>>>>>>> a8a4f96 (final update)
 export interface AddressResult {
   displayName: string;
   city?: string;
@@ -36,7 +43,15 @@ export function getCurrentLocation(options: PositionOptions = { enableHighAccura
       return;
     }
     navigator.geolocation.getCurrentPosition(
+<<<<<<< HEAD
       (position) => resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy }),
+=======
+      (position) => {
+        const coordinates = { latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy };
+        if (!isValidCoordinates(coordinates)) { reject(new Error('The browser returned invalid geographic coordinates.')); return; }
+        resolve(coordinates);
+      },
+>>>>>>> a8a4f96 (final update)
       (error) => {
         const message = error.code === error.PERMISSION_DENIED ? 'Location permission was denied. Enable it in your browser settings and try again.' : error.code === error.TIMEOUT ? 'Location detection timed out. Check your GPS or network connection and try again.' : 'Unable to determine your current location.';
         reject(new Error(message));

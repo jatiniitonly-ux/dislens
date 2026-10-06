@@ -3,6 +3,89 @@ export type AnalysisStatus = 'idle' | 'uploading' | 'validating' | 'reading-meta
 export type ChangeType = 'Possible flood change' | 'Strong detected change signal' | 'Uncertain change';
 export type ReviewStatus = 'Needs review' | 'Reviewed — field verification pending';
 
+<<<<<<< HEAD
+=======
+export type IndianLocation = {
+  id: string;
+  name: string;
+  state: string;
+  latitude: number;
+  longitude: number;
+  regionType: 'city' | 'region';
+  defaultZoom: number;
+  datasetStatus: 'local' | 'available' | 'not-configured';
+  preImage?: string;
+  postImage?: string;
+  source?: string;
+  sourceUrl?: string;
+};
+
+export type RegionalFeatureKind = 'road' | 'building' | 'hospital' | 'shelter' | 'water';
+export interface RegionalFeature { id: string; kind: RegionalFeatureKind; name?: string; coordinates: Array<{ latitude: number; longitude: number }>; }
+export interface RegionalIndicatorSnapshot {
+  city: string;
+  ward: string;
+  zone: string;
+  month: string;
+  populationEst: number;
+  pm25Ugm3: number;
+  aqiAvg: number;
+  avgTempC: number;
+  totalRainfallMm: number;
+  waterSupplyLpcd: number;
+  powerOutageHours: number;
+  reportedDengue: number;
+  unlabelledNumericValues: number[];
+  source: string;
+}
+export interface RegionalDataset {
+  locationId: string;
+  center: { latitude: number; longitude: number };
+  bbox: { minLatitude: number; minLongitude: number; maxLatitude: number; maxLongitude: number };
+  source: string;
+  sourceUrl?: string;
+  fetchedAt: string;
+  features: RegionalFeature[];
+  imageryStatus: 'configured' | 'not-configured';
+  preImage?: string;
+  postImage?: string;
+  imagerySource?: string;
+  isFallback?: boolean;
+  indicatorSnapshots?: RegionalIndicatorSnapshot[];
+  indicatorDatasetId?: string;
+  indicatorCaveat?: string;
+}
+
+export type PopulationSource = 'local-fixture' | 'worldpop-india';
+export interface PopulationProvenance {
+  product: string;
+  productUrl: string;
+  year: number;
+  release: string;
+  version: string;
+  downloadedAt: string;
+  licence: string;
+  crs: string;
+  pixelSize: string;
+  nodata: number;
+  checksumSha256: string;
+  inclusionMethod: string;
+}
+export interface PopulationExposureResult {
+  source: PopulationSource;
+  status: 'available' | 'blocked' | 'loading' | 'error';
+  estimatedPopulation?: number;
+  selectedZonePopulation?: number;
+  provenance?: PopulationProvenance;
+  aoiCoverage?: number;
+  excludedPixels?: number;
+  excludedFraction?: number;
+  zoneTotalsReconcile?: boolean;
+  inclusionMethod?: string;
+  blocker?: string;
+}
+
+>>>>>>> a8a4f96 (final update)
 export interface ImageryMetadata {
   id: string;
   label: string;
@@ -130,6 +213,10 @@ export interface EventRecord {
   postImagery: ImageryMetadata;
   layers: LayerMetadata[];
   result: AnalysisResult;
+<<<<<<< HEAD
+=======
+  populationExposure?: PopulationExposureResult;
+>>>>>>> a8a4f96 (final update)
 }
 export interface AnalysisRun {
   runId: string;
@@ -158,4 +245,8 @@ export interface ReportPayload {
   recommendedInspectionZones: string[];
   regions: DetectedRegion[];
   knownLimitations: string[];
+<<<<<<< HEAD
+=======
+  populationExposure?: PopulationExposureResult;
+>>>>>>> a8a4f96 (final update)
 }

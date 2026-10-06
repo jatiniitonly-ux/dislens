@@ -24,6 +24,17 @@ describe('reports and deterministic results', () => {
     expect(result.warnings.join(' ')).toContain('NDWI unavailable');
     expect(result.methods.find((method) => method.id === 'baseline')?.contribution).toBe(72);
   });
+<<<<<<< HEAD
+=======
+
+  it('keeps Mumbai local reports separate from the Kosi benchmark', () => {
+    const mumbaiEvent = { ...demoEvent, synthetic: false, result: { ...demoEvent.result, regions: [] }, preImagery: { ...demoEvent.preImagery, id: 'LOCAL-MUMBAI-PRE-UNAVAILABLE', source: 'Copernicus Data Space Ecosystem' }, postImagery: { ...demoEvent.postImagery, id: 'LOCAL-MUMBAI-POST-UNAVAILABLE', source: 'Copernicus Data Space Ecosystem' } };
+    const report = createReportPayload(mumbaiEvent, 'PENDING', { source: 'local-fixture', status: 'blocked', blocker: 'Verified raster unavailable' });
+    expect(report.event.datasetId).toBe('LOCAL-MUMBAI-SATELLITE-001');
+    expect(report.event.dataMode).toBe('local');
+    expect(report.summary.exposedPopulation).toBe(0);
+  });
+>>>>>>> a8a4f96 (final update)
 });
 
 it('creates valid GeoJSON features with provenance', () => {
