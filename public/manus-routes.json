@@ -1,1 +1,8 @@
-{"routes":[{"path":"/","title":"DisasterLens AI dashboard"}]}
+{
+  "routes": [{"path":"/","title":"DisasterLens AI dashboard"}],
+  "geospatialTargets": [
+    {"id":"SAFE-ROUTE-KOSI-01","name":"Kosi east-bank access route","type":"safe-route","latitude":26.49,"longitude":87.29,"status":"Local response route reference","detail":"Synthetic route reference for dashboard proximity testing; verify locally before use."},
+    {"id":"ZONE-001","name":"Kosi floodplain priority zone","type":"disaster-zone","latitude":26.495,"longitude":87.296,"status":"Human review required","detail":"Dashboard-local disaster zone reference; not a confirmed hazard boundary."},
+    {"id":"SAFE-ROUTE-KOSI-02","name":"North Kosi shelter approach","type":"safe-route","latitude":26.505,"longitude":87.305,"status":"Local response route reference","detail":"Synthetic route reference for dashboard proximity testing; verify locally before use."}
+  ]
+}

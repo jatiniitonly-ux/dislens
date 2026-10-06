@@ -10,12 +10,12 @@ export function createReportPayload(event: EventRecord, selectedZoneId = event.r
   const averageConfidence = Math.round(regions.reduce((sum, region) => sum + region.confidence, 0) / Math.max(regions.length, 1));
   const affectedAreaByCategory = regions.reduce<Record<string, number>>((categories, region) => { categories[region.changeType] = (categories[region.changeType] ?? 0) + region.polygon.areaKm2; return categories; }, {});
   return {
-    reportVersion: '0.1-demo', generatedAt: new Date().toISOString(), disclaimer: DISCLAIMER,
-    event: { id: event.id, name: event.name, type: event.type, region: event.region, eventDate: event.eventDate, synthetic: event.synthetic },
+    reportVersion: '1.0-mvp', generatedAt: new Date().toISOString(), disclaimer: DISCLAIMER,
+    event: { id: event.id, name: event.name, type: event.type, region: event.region, eventDate: event.eventDate, synthetic: event.synthetic, datasetId: event.synthetic ? 'SYNTHETIC-KOSI-DEMO' : event.preImagery.source === 'Local demonstration dataset' ? 'LOCAL-BENCHMARK-ST04-V2' : 'LIVE-ADAPTER-PENDING', dataMode: event.synthetic ? 'synthetic' : event.preImagery.source === 'Local demonstration dataset' ? 'local' : 'live' },
     imagery: { pre: event.preImagery, post: event.postImagery },
-    processing: { status: event.result.status, methods: event.result.methods, warnings: event.result.warnings, baselineAgreement: event.result.baselineAgreement, steps: ['Validate file type, size and metadata', 'Align imagery to a common ROI and apply quality masks', 'Run baseline pixel difference', 'Run NDWI flood signal when Green and NIR bands are available', 'Clean detections, polygonize regions and compute spatial overlays', 'Score priority, confidence and uncertainty'], priorityWeights: { severity: 0.35, criticalInfrastructure: 0.25, populationExposure: 0.2, accessibilityDifficulty: 0.1, confidence: 0.1 } },
+    processing: { status: event.result.status, methods: event.result.methods, warnings: event.result.warnings, baselineAgreement: event.result.baselineAgreement, steps: ['Validate file type, size and metadata', 'Align imagery to a common ROI and apply quality masks', 'Run baseline pixel difference', 'Run NDWI flood signal when Green and NIR bands are available', 'Run Multi-Sensor Heuristic Ensemble reproducible adapter', 'Clean detections, polygonize regions and compute spatial overlays', 'Score priority, confidence and uncertainty'], priorityWeights: { severity: 0.35, criticalInfrastructure: 0.25, populationExposure: 0.2, accessibilityDifficulty: 0.1, confidence: 0.1 }, pixelStats: event.result.pixelStats, modelProvenance: event.result.modelProvenance },
     summary: { affectedAreaKm2: event.result.improvedAffectedAreaKm2, affectedAreaByCategory, criticalZones: regions.filter((region) => region.priorityLevel === 'Critical').length, infrastructure, exposedPopulation, averageConfidence, baselineAreaKm2: event.result.baselineAffectedAreaKm2, improvedAreaKm2: event.result.improvedAffectedAreaKm2 },
-    mapSnapshot: { view: 'Synthetic Kosi floodplain cartographic surface', selectedZoneId, layers: ['Change probability', 'Roads', 'Hospitals', 'Shelters', 'Uncertain regions'], comparison: `Baseline ${event.result.baselineAffectedAreaKm2.toFixed(1)} km² vs improved ${event.result.improvedAffectedAreaKm2.toFixed(1)} km²` },
+    mapSnapshot: { view: event.synthetic ? 'Synthetic Kosi floodplain cartographic surface' : 'Uploaded imagery-derived change surface', selectedZoneId, layers: ['Change evidence', 'Roads', 'Hospitals', 'Shelters', 'Uncertain regions'], comparison: `Baseline ${event.result.baselineAffectedAreaKm2.toFixed(1)} km² vs improved ${event.result.improvedAffectedAreaKm2.toFixed(1)} km²` },
     recommendedInspectionZones: regions.slice().sort((a, b) => b.priority - a.priority).map((region) => region.id),
     regions,
     knownLimitations: ['Synthetic demonstration data is not a live satellite observation.', 'Overlap indicates potentially affected infrastructure and requires field verification.', 'No field, drone, or human-verified evidence is included in this report.'],
@@ -30,6 +30,38 @@ export function downloadJson(event: EventRecord, selectedZoneId?: string) {
   URL.revokeObjectURL(url);
 }
 
+export function downloadCsv(event: EventRecord) {
+  const headers = ['run_id', 'dataset_id', 'zone_id', 'location', 'change_type', 'priority', 'priority_level', 'confidence', 'affected_area_km2', 'exposed_population', 'hospitals', 'affected_road_km', 'review_status'];
+  const rows = event.result.regions.map((region) => [event.result.runId, event.synthetic ? 'SYNTHETIC-KOSI-DEMO' : event.preImagery.source === 'Local demonstration dataset' ? 'LOCAL-BENCHMARK-ST04-V2' : 'LIVE-ADAPTER-PENDING', region.id, region.location, region.changeType, region.priority, region.priorityLevel, region.confidence, region.polygon.areaKm2.toFixed(2), region.exposedPopulation, region.infrastructure.hospitals, region.infrastructure.affectedRoadKm.toFixed(2), region.reviewStatus]);
+  const escape = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map((row) => row.map(escape).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `${event.id}-priority-zones.csv`; link.click(); URL.revokeObjectURL(url);
+}
+
+export function createGeoJson(event: EventRecord) {
+  const features = event.result.regions.map((region) => {
+    const coordinates = region.polygon.points.split(' ').map((point) => point.split(',').map(Number) as [number, number]).filter((point) => point.length === 2 && point.every(Number.isFinite));
+    const ring: [number, number][] = coordinates.length >= 3 ? [...coordinates, coordinates[0]] : [[region.polygon.centroid.x, region.polygon.centroid.y], [region.polygon.centroid.x + 1, region.polygon.centroid.y], [region.polygon.centroid.x, region.polygon.centroid.y + 1], [region.polygon.centroid.x, region.polygon.centroid.y]];
+    return { type: 'Feature', id: region.id, properties: { zoneId: region.id, location: region.location, changeType: region.changeType, priority: region.priority, confidence: region.confidence, reviewStatus: region.reviewStatus, source: event.synthetic ? 'synthetic-demo' : event.result.pixelStats?.source ?? 'uploaded-analysis', datasetId: event.synthetic ? 'SYNTHETIC-KOSI-DEMO' : event.preImagery.source === 'Local demonstration dataset' ? 'LOCAL-BENCHMARK-ST04-V2' : 'LIVE-ADAPTER-PENDING', dataMode: event.synthetic ? 'synthetic' : event.preImagery.source === 'Local demonstration dataset' ? 'local' : 'live', coordinateSpace: 'dashboard-local coordinates; not longitude/latitude unless imagery CRS is configured' }, geometry: { type: 'Polygon', coordinates: [ring] } };
+  });
+  return { type: 'FeatureCollection', features, properties: { eventId: event.id, runId: event.result.runId, generatedAt: new Date().toISOString(), model: event.result.modelProvenance, disclaimer: DISCLAIMER } };
+}
+
+export function downloadGeoJson(event: EventRecord) {
+  const blob = new Blob([JSON.stringify(createGeoJson(event), null, 2)], { type: 'application/geo+json' });
+  const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `${event.id}-change-zones.geojson`; link.click(); URL.revokeObjectURL(url);
+}
+
+export function createModelCard(event: EventRecord) {
+  return { model: event.result.modelProvenance ?? null, analysisId: event.result.runId, datasetId: event.synthetic ? 'SYNTHETIC-KOSI-DEMO' : event.preImagery.source === 'Local demonstration dataset' ? 'LOCAL-BENCHMARK-ST04-V2' : 'LIVE-ADAPTER-PENDING', dataMode: event.synthetic ? 'synthetic' : event.preImagery.source === 'Local demonstration dataset' ? 'local' : 'live', generatedAt: new Date().toISOString(), source: event.synthetic ? 'Synthetic demo' : 'Real uploaded-data analysis', limitations: ['No trained weights are bundled unless explicitly stated in model provenance.', 'Metrics remain unavailable without a ground-truth mask.', 'Uploaded GeoTIFF comparison is not a substitute for CRS-aware production raster processing.'] };
+}
+
+export function downloadModelCard(event: EventRecord) {
+  const blob = new Blob([JSON.stringify(createModelCard(event), null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `${event.id}-model-card.json`; link.click(); URL.revokeObjectURL(url);
+}
+
 export function downloadPdf(event: EventRecord, selectedZoneId?: string) {
   const payload = createReportPayload(event, selectedZoneId);
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
@@ -37,10 +69,12 @@ export function downloadPdf(event: EventRecord, selectedZoneId?: string) {
   const line = (text: string, size = 10, color = '#334155') => { doc.setFontSize(size); doc.setTextColor(color); const lines = doc.splitTextToSize(text, 510); doc.text(lines, left, y); y += lines.length * (size + 4) + 8; };
   doc.setFillColor(11, 17, 27); doc.rect(0, 0, 595, 110, 'F');
   doc.setTextColor(84, 214, 210); doc.setFontSize(22); doc.text('DISASTERLENS AI', left, 52);
-  doc.setTextColor(224, 231, 239); doc.setFontSize(10); doc.text('INCIDENT INTELLIGENCE REPORT · SYNTHETIC DEMO', left, 76);
+  doc.setTextColor(224, 231, 239); doc.setFontSize(10); doc.text(`INCIDENT INTELLIGENCE REPORT · ${payload.event.synthetic ? 'SYNTHETIC DEMO' : 'UPLOADED ANALYSIS'}`, left, 76);
   y = 140; line(payload.disclaimer, 11, '#c05a32'); line(`${payload.event.name} · ${payload.event.region} · ${payload.event.eventDate}`, 14, '#0f172a');
-  line(`Affected area: ${payload.summary.affectedAreaKm2.toFixed(1)} km²  |  Critical zones: ${payload.summary.criticalZones}  |  Exposed population: ${payload.summary.exposedPopulation.toLocaleString()}  |  Average confidence: ${payload.summary.averageConfidence}%`, 10);
+  line(`Affected area: ${payload.summary.affectedAreaKm2.toFixed(1)} km²  |  Critical zones: ${payload.summary.criticalZones}  |  Exposed population: ${payload.summary.exposedPopulation.toLocaleString()}  |  Average evidence score: ${payload.summary.averageConfidence}%`, 10);
   line(`Baseline vs improved: ${payload.summary.baselineAreaKm2.toFixed(1)} km² → ${payload.summary.improvedAreaKm2.toFixed(1)} km²  |  Selected zone: ${payload.mapSnapshot.selectedZoneId}`, 10);
+  if (payload.processing.modelProvenance) { line(`Model: ${payload.processing.modelProvenance.name} v${payload.processing.modelProvenance.version} · ${payload.processing.modelProvenance.status} · ${payload.processing.modelProvenance.trainingData}`, 9); line(`Dataset: ${payload.processing.modelProvenance.dataset ?? 'Not specified'} · Metrics: IoU ${payload.processing.modelProvenance.metrics?.iou ?? 'N/A'}, precision ${payload.processing.modelProvenance.metrics?.precision ?? 'N/A'}, recall ${payload.processing.modelProvenance.metrics?.recall ?? 'N/A'}, F1 ${payload.processing.modelProvenance.metrics?.f1 ?? 'N/A'}`, 9); }
+  if (payload.processing.pixelStats) line(`Uploaded pixels: ${payload.processing.pixelStats.width}×${payload.processing.pixelStats.height} · changed ${(payload.processing.pixelStats.changeRatio * 100).toFixed(1)}% · mean RGB difference ${payload.processing.pixelStats.meanAbsoluteDifference.toFixed(1)} · ${payload.processing.pixelStats.processingMs} ms`, 9);
   y += 4; doc.setDrawColor(203, 213, 225); doc.line(left, y, 552, y); y += 22; line('Imagery metadata', 13, '#0f172a'); line(`Pre-event: ${payload.imagery.pre.label} · ${payload.imagery.pre.acquisitionDate} · ${payload.imagery.pre.crs} · ${payload.imagery.pre.resolution} · ${payload.imagery.pre.cloudCover}% cloud`, 9); line(`Post-event: ${payload.imagery.post.label} · ${payload.imagery.post.acquisitionDate} · ${payload.imagery.post.crs} · ${payload.imagery.post.resolution} · ${payload.imagery.post.cloudCover}% cloud`, 9); line('Map snapshot equivalent', 13, '#0f172a'); line(`${payload.mapSnapshot.view}. Layers: ${payload.mapSnapshot.layers.join(', ')}. ${payload.mapSnapshot.comparison}.`, 9);
   line('Affected area by category', 13, '#0f172a'); Object.entries(payload.summary.affectedAreaByCategory).forEach(([category, area]) => line(`${category}: ${area.toFixed(1)} km²`, 9));
   line('Recommended inspection zones', 13, '#0f172a'); line(payload.recommendedInspectionZones.join(' → '), 9);

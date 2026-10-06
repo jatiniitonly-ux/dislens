@@ -1,6 +1,6 @@
 export type Role = 'Emergency Analyst' | 'Response Coordinator' | 'Administrator';
-export type AnalysisStatus = 'idle' | 'queued' | 'preprocessing' | 'detecting' | 'postprocessing' | 'scoring' | 'completed' | 'failed' | 'cancelled';
-export type ChangeType = 'Possible flood change' | 'High-probability flood change' | 'Uncertain change';
+export type AnalysisStatus = 'idle' | 'uploading' | 'validating' | 'reading-metadata' | 'queued' | 'preprocessing' | 'reprojecting' | 'aligning' | 'masking-clouds' | 'calculating-indices' | 'detecting' | 'generating-polygons' | 'intersecting-infrastructure' | 'estimating-population' | 'postprocessing' | 'scoring' | 'calculating-confidence' | 'generating-report' | 'completed' | 'failed' | 'cancelled';
+export type ChangeType = 'Possible flood change' | 'Strong detected change signal' | 'Uncertain change';
 export type ReviewStatus = 'Needs review' | 'Reviewed — field verification pending';
 
 export interface ImageryMetadata {
@@ -16,6 +16,11 @@ export interface ImageryMetadata {
   quality: 'Good' | 'Watch' | 'Poor';
   bands: string[];
   fileName?: string;
+  fileSizeBytes?: number;
+  mimeType?: string;
+  sha256?: string;
+  catalogSceneId?: string;
+  catalogAssetHref?: string;
   validation?: 'validated' | 'warning' | 'error';
   warning?: string;
 }
@@ -109,6 +114,8 @@ export interface AnalysisResult {
   improvedAffectedAreaKm2: number;
   baselineAgreement: number;
   status: AnalysisStatus;
+  pixelStats?: { width: number; height: number; comparedPixels: number; changedPixels: number; changeRatio: number; meanAbsoluteDifference: number; processingMs: number; source: 'uploaded-pixels' | 'uploaded-geotiff' | 'demo-fallback'; warnings: string[]; crs?: string; bands?: number };
+  modelProvenance?: { name: string; version: string; trainingData: string; dataset?: string; status: string; inputFeatures: string[]; output: string; metrics?: { iou: number | null; precision: number | null; recall: number | null; f1: number | null; note: string } };
 }
 
 export interface EventRecord {
@@ -124,14 +131,28 @@ export interface EventRecord {
   layers: LayerMetadata[];
   result: AnalysisResult;
 }
+export interface AnalysisRun {
+  runId: string;
+  datasetId: string;
+  dataMode: 'synthetic' | 'local' | 'live';
+  eventId: string;
+  eventName: string;
+  aoi: string;
+  preScene: ImageryMetadata;
+  postScene: ImageryMetadata;
+  groundTruthDataset: string;
+  processingConfig: { ndwiThreshold: number; pixelDifferenceThreshold: number; sarThreshold: number; minimumComponentSize: number };
+  result: AnalysisResult;
+  provenance: { source: string; operationalStatus: string; algorithmVersion: string; processedAt: string };
+}
 
 export interface ReportPayload {
   reportVersion: string;
   generatedAt: string;
   disclaimer: string;
-  event: Pick<EventRecord, 'id' | 'name' | 'type' | 'region' | 'eventDate' | 'synthetic'>;
+  event: Pick<EventRecord, 'id' | 'name' | 'type' | 'region' | 'eventDate' | 'synthetic'> & { datasetId: string; dataMode: 'synthetic' | 'local' | 'live'; };
   imagery: { pre: ImageryMetadata; post: ImageryMetadata };
-  processing: { status: AnalysisStatus; methods: DetectionMethod[]; warnings: string[]; baselineAgreement: number; steps: string[]; priorityWeights: Record<string, number> };
+  processing: { status: AnalysisStatus; methods: DetectionMethod[]; warnings: string[]; baselineAgreement: number; steps: string[]; priorityWeights: Record<string, number>; pixelStats?: AnalysisResult['pixelStats']; modelProvenance?: AnalysisResult['modelProvenance'] };
   summary: { affectedAreaKm2: number; affectedAreaByCategory: Record<string, number>; criticalZones: number; infrastructure: number; exposedPopulation: number; averageConfidence: number; baselineAreaKm2: number; improvedAreaKm2: number };
   mapSnapshot: { view: string; selectedZoneId: string; layers: string[]; comparison: string };
   recommendedInspectionZones: string[];
